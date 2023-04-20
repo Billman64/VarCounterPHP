@@ -1,6 +1,13 @@
 <?php
-const PRINT_OUTPUT = True;
 const THRESHOLD = 30;
+const PRINT_OUTPUT = True;
+const EMAIL_OUTPUT = True;
+const EMAIL = "";
+const CC = "";
+const EXT = "php";	// lowercase only
+const SEARCH_SYMBOL = "$";	// alternative: "="
+const FILTER_ON = True;
+const ONLY_OVER_THRESHOLD = True;
 
 
 /* 
@@ -16,12 +23,12 @@ Since this tool lists other files in your server environment, make sure that it'
 */
 
 
-e("<div style='font-weight:bold;'>Files with too many $'s:</div><br>");
+$emailMsg="";
+e("<div style='font-weight:bold;'>Files with too many ". SEARCH_SYMBOL ."'s:</div><br>");
+e("<table><tr style='background-color:#888;color:#eee;'><td>Path\\file</td><td># ". SEARCH_SYMBOL ."'s</td></tr>");
 
-e("<table><tr style='background-color:#888;color:#eee;'><td>Path</td><td>#</td></tr>");
-e("<tr>");
 
-
+$fileCounter=0;
 $it = new RecursiveDirectoryIterator(getcwd());
 foreach(new RecursiveIteratorIterator($it) as $file) {
 	
@@ -31,34 +38,32 @@ foreach(new RecursiveIteratorIterator($it) as $file) {
 		break;
 		
 		default:
-			if(strtolower(substr($file,-4))==".php"){
-				e("<td>" . $file . "</td>");
+			if(strtolower(substr($file,-4))=="." . EXT){
+				$fileCounter++;
+				
+				$posLastSlash = strripos(getcwd(), "\\");
+				
+				$fileDisplay = substr($file, $posLastSlash, strlen($file) - $posLastSlash);
+				
 				$fileHandle = fopen($file,"r");
 				$DCount = countVars($fileHandle);
-				e("<td>" . $DCount);
-				if($DCount>THRESHOLD) e("!");
 				fclose($fileHandle);
-				e("</td></tr>");
+				
+				if((ONLY_OVER_THRESHOLD & $DCount>THRESHOLD) OR (!ONLY_OVER_THRESHOLD)){
+					e("<tr>");
+					e("<td>" . $fileDisplay . "</td>");
+					e("<td>" . $DCount);
+					if($DCount>THRESHOLD) e(" !");
+					e("</td></tr>");
+				}
 			}
 	}
 }
-
-echo "</table><br><br>";
-
-
-
-//e("<table><tr style='background-color:&888'><td>Path</td><td>#</td></tr>");
-//e("<tr>");
+e("<tr><td style='text-align:right;'>Files scanned: " . $fileCounter . "</td></tr>");
+e("</table><br>");
 
 
-/*
-foreach(glob("*", GLOB_ONLYDIR) as $d){
-	processFilesInDirectory("");
-    chdir($d);
-	processFilesInDirectory($d);
-    chdir("..");
-}*/
-
+//echo("email msg<br>" . $emailMsg);	//testing
 
 function countVars($fileHandle){
     $count=0;
@@ -69,23 +74,12 @@ function countVars($fileHandle){
     return $count;
 }
 
-
-/*
-function processFilesInDirectory($directory){
-	    foreach(glob("*.[Pp][Hh][Pp]") as $fileName){
-		e("<td>" . getcwd() . "\\" . $fileName . "</td>");
-        $fileHandle = fopen($fileName,"r");
-		$DCount = countVars($fileHandle);
-        e("<td>" . $DCount);
-        if($DCount>THRESHOLD) e("!");
-        fclose($fileHandle);
-		e("</td></tr>");
-    }
-}*/
-
 function e($string){
 	if(PRINT_OUTPUT) echo $string;
-	
+	if(EMAIL_OUTPUT) {
+		global $emailMsg;
+		$emailMsg .= $string;
+	}
 	return;
 }
 
