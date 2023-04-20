@@ -41,7 +41,9 @@ foreach(new RecursiveIteratorIterator($it) as $file) {
 			if(strtolower(substr($file,-4))=="." . EXT){
 				$fileCounter++;
 				
-				$posLastSlash = strripos(getcwd(), "\\");
+				$posLastSlash = strripos(getcwd(), "/");
+				if($posLastSlash==False) $posLastSlash = strripos(getcwd(), "\\");
+				
 				
 				$fileDisplay = substr($file, $posLastSlash, strlen($file) - $posLastSlash);
 				
